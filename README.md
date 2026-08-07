@@ -1,5 +1,11 @@
 # Choko Studio Library
 
+Private, mobile-first field-note library for Grand Little Views. Choko Vision adds a manually triggered, evidence-first editorial suggestion and preserves the complete learning trail from AI proposal to human decision and explanation.
+
+## Choko Vision configuration
+
+Run migration `0003_choko_vision.sql`, then configure `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` and optionally `CHOKO_AI_MODEL` as server-side Vercel variables. Never prefix the AI key with `VITE_`. See `docs/CHOKO_AI.md` for the authority hierarchy, privacy rules and feedback architecture.
+
 A private, mobile-first editorial library for **Grand Little Views — with Choko Von Snack**. A Noticing keeps an original nature image or video together with the human observation that made the photographer stop.
 
 The Bulk Import inbox accepts up to 50 photos at a time and creates one draft Noticing per photo. Uploads run sequentially for mobile reliability; drafts are reviewed and annotated later.

@@ -4,7 +4,7 @@ import { classifyFile, normalizeTag } from './validation'
 import type { Noticing, NoticingInput } from '../types'
 
 const BUCKET = 'noticing-assets'
-const select = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), noticing_notes(*), publication_records(id,platform,published_at,caption)'
+const select = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), noticing_notes(*), publication_records(id,platform,published_at,caption), ai_generations(*), editorial_revisions(*)'
 
 function shape(row: Record<string, unknown>): Noticing {
   const relations = (row.noticing_tags as { tags: Noticing['tags'] extends (infer T)[] | undefined ? T : never }[] | undefined) ?? []
