@@ -1,0 +1,1 @@
+-- Intentionally empty. Create the private owner through Supabase Auth; never seed private user data.
