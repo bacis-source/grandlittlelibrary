@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { filterNoticings, normalizeTag, validateFiles } from './validation'
+import { filterNoticings, normalizeTag, validateBulkImages, validateFiles } from './validation'
 
 describe('upload validation', () => {
   it('rejects mixed image and video uploads', () => { const files = [new File(['x'], 'one.jpg', { type: 'image/jpeg' }), new File(['x'], 'one.mp4', { type: 'video/mp4' })]; expect(validateFiles(files)).toContain('Choose several images or one video, not both.') })
   it('rejects unsupported types', () => expect(validateFiles([new File(['x'], 'bad.exe', { type: 'application/octet-stream' })])[0]).toContain('not a supported'))
+  it('accepts a batch of separate images', () => expect(validateBulkImages([new File(['x'], 'one.jpg', { type: 'image/jpeg' }), new File(['x'], 'two.png', { type: 'image/png' })])).toEqual([]))
+  it('rejects video in the photo inbox', () => expect(validateBulkImages([new File(['x'], 'one.mp4', { type: 'video/mp4' })])[0]).toContain('not a supported image'))
 })
 describe('search and tags', () => {
   const items = [{ title: 'Morning web', observation_text: 'Sun touched it', tags: [{ name: 'mist' }] }, { title: 'Moon', observation_text: 'Still water', tags: [] }]

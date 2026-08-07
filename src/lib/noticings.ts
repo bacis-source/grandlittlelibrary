@@ -82,3 +82,54 @@ export async function deleteNoticing(id: string) {
   const { error } = await supabase.from('noticings').update({ deleted_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
+
+export type BulkImportState = 'queued' | 'uploading' | 'done' | 'error'
+export interface BulkImportProgress { index: number; state: BulkImportState; noticingId?: string; error?: string }
+
+export async function bulkImportImages(files: File[], user: User, onProgress: (progress: BulkImportProgress) => void) {
+  const imported: string[] = []
+  for (const [index, file] of files.entries()) {
+    onProgress({ index, state: 'uploading' })
+    let noticingId: string | undefined
+    try {
+      const { data: noticing, error: noticingError } = await supabase.from('noticings').insert({
+        user_id: user.id,
+        title: null,
+        observation_text: null,
+        original_observation_text: null,
+        status: 'draft',
+      }).select('id').single()
+      if (noticingError) throw noticingError
+      noticingId = noticing.id as string
+
+      const assetId = crypto.randomUUID()
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `${user.id}/noticings/${noticingId}/originals/${assetId}-${safe}`
+      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
+      if (uploadError) throw uploadError
+      const { error: assetError } = await supabase.from('noticing_assets').insert({
+        id: assetId,
+        noticing_id: noticingId,
+        user_id: user.id,
+        asset_type: 'image',
+        storage_bucket: BUCKET,
+        storage_path: path,
+        original_filename: file.name,
+        mime_type: file.type,
+        file_size_bytes: file.size,
+        sort_order: 0,
+        is_primary: true,
+      })
+      if (assetError) {
+        await supabase.storage.from(BUCKET).remove([path])
+        throw assetError
+      }
+      imported.push(noticingId)
+      onProgress({ index, state: 'done', noticingId })
+    } catch (cause) {
+      if (noticingId) await supabase.from('noticings').update({ deleted_at: new Date().toISOString() }).eq('id', noticingId)
+      onProgress({ index, state: 'error', noticingId, error: cause instanceof Error ? cause.message : 'Upload failed' })
+    }
+  }
+  return imported
+}

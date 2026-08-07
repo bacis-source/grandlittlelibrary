@@ -2,6 +2,8 @@
 
 A private, mobile-first editorial library for **Grand Little Views — with Choko Von Snack**. A Noticing keeps an original nature image or video together with the human observation that made the photographer stop.
 
+The Bulk Import inbox accepts up to 50 photos at a time and creates one draft Noticing per photo. Uploads run sequentially for mobile reliability; drafts are reviewed and annotated later.
+
 ## Stack
 
 React 19, strict TypeScript, Vite, Supabase Auth/PostgreSQL/Storage, React Router, React Hook Form, Zod, Vitest and Vercel.

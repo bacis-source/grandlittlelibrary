@@ -8,3 +8,9 @@
 - Private image, video and voice-note uploads with immutable originals.
 - Publication history and rights display.
 - Versioned schema, RLS, Storage policies, tests and deployment documentation.
+
+## Unreleased
+
+- Added a mobile-first Bulk Import inbox for up to 50 photos per batch.
+- Each imported photo becomes an independent private draft Noticing for later review.
+- Added sequential upload progress, per-photo errors and retry support.

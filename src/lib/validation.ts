@@ -41,6 +41,17 @@ export function validateFiles(files: File[]): string[] {
   return errors
 }
 
+export function validateBulkImages(files: File[]): string[] {
+  const errors: string[] = []
+  if (!files.length) errors.push('Choose at least one image.')
+  if (files.length > 50) errors.push('Choose no more than 50 images at a time.')
+  files.forEach((file) => {
+    if (classifyFile(file) !== 'image') errors.push(`${file.name} is not a supported image.`)
+    else if (file.size > limits.image) errors.push(`${file.name} is larger than the 25 MB limit.`)
+  })
+  return errors
+}
+
 export function normalizeTag(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
