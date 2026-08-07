@@ -4,6 +4,8 @@ A private, mobile-first editorial library for **Grand Little Views — with Chok
 
 The Bulk Import inbox accepts up to 50 photos at a time and creates one draft Noticing per photo. Uploads run sequentially for mobile reliability; drafts are reviewed and annotated later.
 
+Incomplete forms are restored from session storage (file selections remain browser-controlled). Deleted Noticings move to a recovery bin; permanent deletion explicitly removes private Storage originals before deleting relational records.
+
 ## Stack
 
 React 19, strict TypeScript, Vite, Supabase Auth/PostgreSQL/Storage, React Router, React Hook Form, Zod, Vitest and Vercel.

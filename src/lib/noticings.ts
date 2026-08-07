@@ -4,7 +4,7 @@ import { classifyFile, normalizeTag } from './validation'
 import type { Noticing, NoticingInput } from '../types'
 
 const BUCKET = 'noticing-assets'
-const select = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), publication_records(id,platform,published_at,caption)'
+const select = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), noticing_notes(*), publication_records(id,platform,published_at,caption)'
 
 function shape(row: Record<string, unknown>): Noticing {
   const relations = (row.noticing_tags as { tags: Noticing['tags'] extends (infer T)[] | undefined ? T : never }[] | undefined) ?? []
@@ -41,13 +41,16 @@ async function saveTags(noticingId: string, user: User, names: string[]) {
   }
 }
 
-export async function createNoticing(input: NoticingInput, files: File[], user: User) {
+export interface UploadProgress { index: number; total: number; filename: string }
+
+export async function createNoticing(input: NoticingInput, files: File[], user: User, onProgress?: (progress: UploadProgress) => void) {
   const { tags, ...values } = input
   const { data, error } = await supabase.from('noticings').insert({ ...values, user_id: user.id, original_observation_text: input.observation_text }).select().single()
   if (error) throw error
   try {
     await saveTags(data.id, user, tags)
     for (const [index, file] of files.entries()) {
+      onProgress?.({ index, total: files.length, filename: file.name })
       const kind = classifyFile(file)
       if (!kind) continue
       const assetId = crypto.randomUUID()
@@ -80,6 +83,42 @@ export async function patchNoticing(id: string, values: Partial<Pick<Noticing, '
 
 export async function deleteNoticing(id: string) {
   const { error } = await supabase.from('noticings').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+  if (error) throw error
+}
+
+export async function listDeletedNoticings() {
+  const { data, error } = await supabase.from('noticings').select(select).not('deleted_at', 'is', null).order('deleted_at', { ascending: false })
+  if (error) throw error
+  return Promise.all((data ?? []).map((row) => addSignedUrls(shape(row))))
+}
+
+export async function restoreNoticing(id: string) {
+  const { error } = await supabase.from('noticings').update({ deleted_at: null }).eq('id', id)
+  if (error) throw error
+}
+
+export async function permanentlyDeleteNoticing(id: string) {
+  const { data: assets, error: assetsError } = await supabase.from('noticing_assets').select('storage_bucket,storage_path').eq('noticing_id', id)
+  if (assetsError) throw assetsError
+  const byBucket = new Map<string, string[]>()
+  for (const asset of assets ?? []) byBucket.set(asset.storage_bucket, [...(byBucket.get(asset.storage_bucket) ?? []), asset.storage_path])
+  for (const [bucket, paths] of byBucket) {
+    if (!paths.length) continue
+    const { error } = await supabase.storage.from(bucket).remove(paths)
+    if (error) throw error
+  }
+  const { error } = await supabase.from('noticings').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function addNoticingNote(noticingId: string, user: User, content: string) {
+  const { data, error } = await supabase.from('noticing_notes').insert({ noticing_id: noticingId, user_id: user.id, note_type: 'editorial_note', content }).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteNoticingNote(noteId: string) {
+  const { error } = await supabase.from('noticing_notes').delete().eq('id', noteId)
   if (error) throw error
 }
 

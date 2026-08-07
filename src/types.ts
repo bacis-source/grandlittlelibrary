@@ -23,6 +23,7 @@ export interface NoticingAsset {
 
 export interface Tag { id: string; name: string; normalized_name: string }
 export interface PublicationRecord { id: string; platform: string; published_at: string | null; caption: string | null }
+export interface NoticingNote { id: string; noticing_id: string; user_id: string; note_type: string; content: string; created_at: string; updated_at: string }
 export interface Noticing {
   id: string
   user_id: string
@@ -50,6 +51,8 @@ export interface Noticing {
   noticing_assets?: NoticingAsset[]
   tags?: Tag[]
   publication_records?: PublicationRecord[]
+  noticing_notes?: NoticingNote[]
+  deleted_at?: string | null
 }
 
 export interface NoticingInput {
