@@ -4,7 +4,8 @@ import { classifyFile, normalizeTag } from './validation'
 import type { Noticing, NoticingInput } from '../types'
 
 const BUCKET = 'noticing-assets'
-const select = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), noticing_notes(*), publication_records(id,platform,published_at,caption), ai_generations(*), editorial_revisions(*)'
+const baseSelect = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), noticing_notes(*), publication_records(id,platform,published_at,caption)'
+const detailSelect = `${baseSelect}, ai_generations(*), editorial_revisions(*)`
 
 function shape(row: Record<string, unknown>): Noticing {
   const relations = (row.noticing_tags as { tags: Noticing['tags'] extends (infer T)[] | undefined ? T : never }[] | undefined) ?? []
@@ -20,13 +21,13 @@ async function addSignedUrls(item: Noticing) {
 }
 
 export async function listNoticings() {
-  const { data, error } = await supabase.from('noticings').select(select).is('deleted_at', null).order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('noticings').select(baseSelect).is('deleted_at', null).order('created_at', { ascending: false })
   if (error) throw error
   return Promise.all((data ?? []).map((row) => addSignedUrls(shape(row))))
 }
 
 export async function getNoticing(id: string) {
-  const { data, error } = await supabase.from('noticings').select(select).eq('id', id).is('deleted_at', null).single()
+  const { data, error } = await supabase.from('noticings').select(detailSelect).eq('id', id).is('deleted_at', null).single()
   if (error) throw error
   return addSignedUrls(shape(data))
 }
@@ -87,7 +88,7 @@ export async function deleteNoticing(id: string) {
 }
 
 export async function listDeletedNoticings() {
-  const { data, error } = await supabase.from('noticings').select(select).not('deleted_at', 'is', null).order('deleted_at', { ascending: false })
+  const { data, error } = await supabase.from('noticings').select(baseSelect).not('deleted_at', 'is', null).order('deleted_at', { ascending: false })
   if (error) throw error
   return Promise.all((data ?? []).map((row) => addSignedUrls(shape(row))))
 }
