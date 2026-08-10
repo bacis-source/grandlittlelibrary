@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Check, ImagePlus, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, ImagePlus, SkipForward, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { VoiceRecorder } from '../components/VoiceRecorder'
 import { useAuth } from '../AuthContext'
-import { createNoticing, getNoticing, updateNoticing } from '../lib/noticings'
+import { createNoticing, getNextReviewId, getNoticing, listReviewQueue, updateNoticing } from '../lib/noticings'
 import { noticingSchema, validateFiles } from '../lib/validation'
 import type { NoticingInput } from '../types'
 
@@ -14,7 +14,9 @@ const defaults: NoticingInput = { observation_text: '', status: 'unreviewed', ta
 
 export function NoticingFormPage() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const editing = Boolean(id)
+  const reviewing = editing && searchParams.get('review') === '1'
   const navigate = useNavigate()
   const { session } = useAuth()
   const [files, setFiles] = useState<File[]>([])
@@ -24,6 +26,8 @@ export function NoticingFormPage() {
   const [tagText, setTagText] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploadLabel, setUploadLabel] = useState('')
+  const [existingPreview, setExistingPreview] = useState('')
+  const [reviewQueue, setReviewQueue] = useState<string[]>([])
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<NoticingInput>({ resolver: zodResolver(noticingSchema), defaultValues: defaults })
 
   useEffect(() => {
@@ -32,7 +36,9 @@ export function NoticingFormPage() {
         const tags = item.tags?.map((tag) => tag.name) ?? []
         setTagText(tags.join(', '))
         reset({ title: item.title ?? '', observation_text: item.observation_text ?? '', location_name: item.location_name ?? '', captured_at: item.captured_at?.slice(0, 16) ?? '', weather: item.weather ?? '', time_of_day: item.time_of_day ?? '', light_condition: item.light_condition ?? '', environment_type: item.environment_type ?? '', mood: item.mood ?? '', status: item.status, tags })
+        setExistingPreview(item.noticing_assets?.find((asset) => asset.is_primary)?.signed_url ?? item.noticing_assets?.[0]?.signed_url ?? '')
       })
+      if (reviewing) listReviewQueue().then(setReviewQueue)
       return
     }
     const stored = sessionStorage.getItem(DRAFT_KEY)
@@ -42,7 +48,7 @@ export function NoticingFormPage() {
       reset(draft.values)
       setTagText(draft.tagText)
     } catch { sessionStorage.removeItem(DRAFT_KEY) }
-  }, [id, reset])
+  }, [id, reset, reviewing])
 
   useEffect(() => {
     if (editing) return
@@ -72,23 +78,34 @@ export function NoticingFormPage() {
     try {
       const payload = { ...input, tags: tagText.split(',').map((tag) => tag.trim()).filter(Boolean) }
       let nextId = id
-      if (id) await updateNoticing(id, payload, session.user)
+      if (id) await updateNoticing(id, reviewing ? { ...payload, status: 'reviewed' } : payload, session.user)
       else {
         const primary = visualFiles[primaryIndex]
         const ordered = [primary, ...files.filter((file) => file !== primary)]
         nextId = await createNoticing(payload, ordered, session.user, ({ index, total, filename }) => setUploadLabel(`Uploading ${index + 1} of ${total}: ${filename}`))
       }
       sessionStorage.removeItem(DRAFT_KEY)
-      navigate(`/noticings/${nextId}`)
+      if (reviewing && id) {
+        const next = getNextReviewId(reviewQueue, id)
+        navigate(next ? `/noticings/${next}/edit?review=1` : '/library?status=reviewed')
+      } else navigate(`/noticings/${nextId}`)
     } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Could not save this noticing.') }
     finally { setSaving(false); setUploadLabel('') }
   }
 
   function discard() { sessionStorage.removeItem(DRAFT_KEY); navigate('/library') }
 
-  return <div className="page form-page"><Link className="back" to={editing && id ? `/noticings/${id}` : '/library'}><ArrowLeft size={17}/> Back</Link><div className="page-title"><p className="kicker">{editing ? 'Keep the moment true' : 'A new small wonder'}</p><h1>{editing ? 'Edit noticing' : 'What made you stop?'}</h1><p>The observation is the heart of every noticing.</p></div><form onSubmit={handleSubmit(submit)}>
+  function skip() {
+    if (!id) return
+    const next = getNextReviewId(reviewQueue, id)
+    navigate(next ? `/noticings/${next}/edit?review=1` : '/library')
+  }
+
+  const reviewPosition = id ? reviewQueue.indexOf(id) + 1 : 0
+
+  return <div className="page form-page"><Link className="back" to={editing && id ? `/noticings/${id}` : '/library'}><ArrowLeft size={17}/> Back</Link>{reviewing && <section className="review-progress"><div><p className="kicker">Review next</p><strong>{reviewQueue.length ? `${reviewPosition} of ${reviewQueue.length}` : 'Opening queue…'}</strong></div><div className="review-progress-track"><span style={{ width: reviewQueue.length ? `${(reviewPosition / reviewQueue.length) * 100}%` : '0%' }}/></div></section>}<div className="page-title"><p className="kicker">{reviewing ? 'One moment at a time' : editing ? 'Keep the moment true' : 'A new small wonder'}</p><h1>{reviewing ? 'Review this noticing' : editing ? 'Edit noticing' : 'What made you stop?'}</h1><p>{reviewing ? 'Add what matters. Save when this moment feels true.' : 'The observation is the heart of every noticing.'}</p></div>{reviewing && existingPreview && <div className="review-preview"><img src={existingPreview} alt="Original photograph for this noticing"/></div>}<form onSubmit={handleSubmit(submit)}>
     {!editing && <section className="form-section"><div className="section-copy"><span>01</span><div><h2>Original moment</h2><p>Add up to 10 images or one video. Tap an image to make it primary.</p></div></div><label className="dropzone"><ImagePlus/><strong>Choose from your camera roll</strong><span>JPEG, PNG, WebP, HEIC, MP4 or MOV</span><input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime" multiple onChange={(event) => choose(Array.from(event.target.files ?? []))}/></label>{fileError && <p className="error">{fileError}</p>}<div className="preview-row">{previews.map(({ file, url }, index) => <div className={`preview ${index === primaryIndex && !file.type.startsWith('audio/') ? 'primary-preview' : ''}`} key={url} onClick={() => !file.type.startsWith('audio/') && setPrimaryIndex(index)}>{file.type.startsWith('video/') ? <video src={url}/> : file.type.startsWith('audio/') ? null : <img src={url} alt=""/>}<button type="button" onClick={(event) => { event.stopPropagation(); removeFile(index) }} aria-label={`Remove ${file.name}`}><X/></button>{index === primaryIndex && !file.type.startsWith('audio/') && <span><Check size={11}/> Primary</span>}</div>)}</div></section>}
     <section className="form-section"><div className="section-copy"><span>{editing ? '01' : '02'}</span><div><h2>Your observation</h2><p>Keep the first thought simple and honest.</p></div></div><label className="observation">Why did you stop?<textarea rows={5} autoFocus={!editing} placeholder="The spider web looked invisible until the sun touched it…" {...register('observation_text')}/>{errors.observation_text && <small className="error">{errors.observation_text.message}</small>}</label>{!editing && <VoiceRecorder onChange={(file) => setFiles((current) => [...current.filter((item) => !item.type.startsWith('audio/')), ...(file ? [file] : [])])}/>}</section>
-    <section className="form-section"><div className="section-copy"><span>{editing ? '02' : '03'}</span><div><h2>Context</h2><p>Optional details make moments easier to rediscover.</p></div></div><div className="form-grid"><label>Title<input {...register('title')} placeholder="Morning web"/></label><label>Captured at<input type="datetime-local" {...register('captured_at')}/></label><label>Place<input {...register('location_name')} placeholder="The lower meadow"/></label><label>Time of day<input {...register('time_of_day')} placeholder="Early morning"/></label><label>Light<input {...register('light_condition')} placeholder="Soft backlight"/></label><label>Weather<input {...register('weather')} placeholder="Misty"/></label><label>Environment<input {...register('environment_type')} placeholder="Meadow"/></label><label>Mood<input {...register('mood')} placeholder="Quiet wonder"/></label><label className="wide">Tags<input value={tagText} onChange={(event) => { setTagText(event.target.value); setValue('tags', event.target.value.split(',').filter(Boolean)) }} placeholder="mist, spider-web, sunrise"/><small>Separate tags with commas.</small></label><label>Status<select {...register('status')}><option value="draft">Draft</option><option value="unreviewed">Unreviewed</option><option value="reviewed">Reviewed</option><option value="ready">Ready</option><option value="archived">Archived</option></select></label></div></section>
-    {uploadLabel && <div className="upload-progress" role="status"><span className="spin">◌</span><strong>{uploadLabel}</strong><small>Keep this page open until every original is safe.</small></div>}{submitError && <p className="error">{submitError}</p>}<div className="form-actions"><button type="button" className="secondary" onClick={discard}>{editing ? 'Cancel' : 'Discard draft'}</button><button className="primary" disabled={saving}>{saving ? 'Keeping it safe…' : editing ? 'Save changes' : 'Save noticing'}</button></div></form></div>
+    <section className="form-section"><div className="section-copy"><span>{editing ? '02' : '03'}</span><div><h2>Context</h2><p>Optional details make moments easier to rediscover.</p></div></div><div className="form-grid"><label>Title<input {...register('title')} placeholder="Morning web"/></label><label>Captured at<input type="datetime-local" {...register('captured_at')}/></label><label>Place<input {...register('location_name')} placeholder="The lower meadow"/></label><label>Time of day<input {...register('time_of_day')} placeholder="Early morning"/></label><label>Light<input {...register('light_condition')} placeholder="Soft backlight"/></label><label>Weather<input {...register('weather')} placeholder="Misty"/></label><label>Environment<input {...register('environment_type')} placeholder="Meadow"/></label><label>Mood<input {...register('mood')} placeholder="Quiet wonder"/></label><label className="wide">Tags<input value={tagText} onChange={(event) => { setTagText(event.target.value); setValue('tags', event.target.value.split(',').filter(Boolean)) }} placeholder="mist, spider-web, sunrise"/><small>Separate tags with commas.</small></label>{!reviewing && <label>Status<select {...register('status')}><option value="draft">Draft</option><option value="unreviewed">Unreviewed</option><option value="reviewed">Reviewed</option><option value="ready">Ready</option><option value="archived">Archived</option></select></label>}</div></section>
+    {uploadLabel && <div className="upload-progress" role="status"><span className="spin">◌</span><strong>{uploadLabel}</strong><small>Keep this page open until every original is safe.</small></div>}{submitError && <p className="error">{submitError}</p>}<div className="form-actions">{reviewing ? <button type="button" className="secondary" onClick={skip}><SkipForward size={17}/> Skip for now</button> : <button type="button" className="secondary" onClick={discard}>{editing ? 'Cancel' : 'Discard draft'}</button>}<button className="primary" disabled={saving}>{saving ? 'Keeping it safe…' : reviewing ? <>Save & review next <ArrowRight size={17}/></> : editing ? 'Save changes' : 'Save noticing'}</button></div></form></div>
 }

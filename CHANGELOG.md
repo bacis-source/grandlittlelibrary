@@ -19,6 +19,8 @@
 
 ## Unreleased
 
+- Added Review next queue with progress, skip and save-and-continue actions.
+- Review mode preserves the complete original image while editing observations, titles, tags and metadata.
 - Added a mobile-first Bulk Import inbox for up to 50 photos per batch.
 - Each imported photo becomes an independent private draft Noticing for later review.
 - Added sequential upload progress, per-photo errors and retry support.

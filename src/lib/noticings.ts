@@ -26,6 +26,18 @@ export async function listNoticings() {
   return Promise.all((data ?? []).map((row) => addSignedUrls(shape(row))))
 }
 
+export async function listReviewQueue() {
+  const { data, error } = await supabase.from('noticings').select('id').is('deleted_at', null).in('status', ['draft', 'unreviewed']).order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []).map((item) => item.id as string)
+}
+
+export function getNextReviewId(queue: string[], currentId: string) {
+  if (queue.length < 2) return undefined
+  const currentIndex = queue.indexOf(currentId)
+  return queue[(currentIndex < 0 ? 0 : currentIndex + 1) % queue.length]
+}
+
 export async function getNoticing(id: string) {
   const { data, error } = await supabase.from('noticings').select(detailSelect).eq('id', id).is('deleted_at', null).single()
   if (error) throw error
