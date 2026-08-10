@@ -2,9 +2,9 @@ import { supabase } from './supabase'
 import type { AIGeneration, AIGenerationType, EditorialDecision, EditorialRevision, FeedbackCategory } from '../types'
 
 export async function analyzeNoticing(noticingId: string) {
-  const { data: sessionData } = await supabase.auth.getSession()
+  const { data: sessionData, error: refreshError } = await supabase.auth.refreshSession()
   const token = sessionData.session?.access_token
-  if (!token) throw new Error('Sign in before asking Choko.')
+  if (refreshError || !token) throw new Error('Your login needs to be renewed. Log out and sign in once, then try again.')
   const response = await fetch('/api/choko-analyze', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ noticingId }) })
   const payload = await response.json() as { error?: string; generations?: AIGeneration[] }
   if (!response.ok || !payload.generations) throw new Error(payload.error || 'Choko could not notice this moment.')
