@@ -32,6 +32,16 @@ export async function listReviewQueue() {
   return (data ?? []).map((item) => item.id as string)
 }
 
+export async function listChokoBatchCandidates() {
+  const { data, error } = await supabase.from('noticings').select('id,created_at,ai_generations(id)').is('deleted_at', null).in('status', ['draft', 'unreviewed']).order('created_at', { ascending: true })
+  if (error) throw error
+  return withoutExistingAnalysis(data ?? [])
+}
+
+export function withoutExistingAnalysis(items: Array<{ id: string; ai_generations?: Array<{ id: string }> | null }>) {
+  return items.filter((item) => !item.ai_generations?.length).map((item) => item.id)
+}
+
 export function getNextReviewId(queue: string[], currentId: string) {
   if (queue.length < 2) return undefined
   const currentIndex = queue.indexOf(currentId)

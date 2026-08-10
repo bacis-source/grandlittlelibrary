@@ -33,9 +33,10 @@ export function NoticingFormPage() {
   useEffect(() => {
     if (id) {
       getNoticing(id).then((item) => {
-        const tags = item.tags?.map((tag) => tag.name) ?? []
+        const generated = [...(item.ai_generations ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.structured_output
+        const tags = item.tags?.length ? item.tags.map((tag) => tag.name) : reviewing ? generated?.suggested_tags ?? [] : []
         setTagText(tags.join(', '))
-        reset({ title: item.title ?? '', observation_text: item.observation_text ?? '', location_name: item.location_name ?? '', captured_at: item.captured_at?.slice(0, 16) ?? '', weather: item.weather ?? '', time_of_day: item.time_of_day ?? '', light_condition: item.light_condition ?? '', environment_type: item.environment_type ?? '', mood: item.mood ?? '', status: item.status, tags })
+        reset({ title: item.title || (reviewing ? generated?.suggested_title ?? '' : ''), observation_text: item.observation_text || (reviewing ? generated?.choko_noticing ?? '' : ''), location_name: item.location_name ?? '', captured_at: item.captured_at?.slice(0, 16) ?? '', weather: item.weather ?? '', time_of_day: item.time_of_day ?? '', light_condition: item.light_condition ?? '', environment_type: item.environment_type ?? '', mood: item.mood ?? '', status: item.status, tags })
         setExistingPreview(item.noticing_assets?.find((asset) => asset.is_primary)?.signed_url ?? item.noticing_assets?.[0]?.signed_url ?? '')
       })
       if (reviewing) listReviewQueue().then(setReviewQueue)

@@ -9,13 +9,19 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('./supabase', () => ({ supabase: { from: mocks.from, storage: { from: mocks.storageFrom } } }))
 
-import { addNoticingNote, deleteNoticing, deleteNoticingNote, getNextReviewId, permanentlyDeleteNoticing, restoreNoticing } from './noticings'
+import { addNoticingNote, deleteNoticing, deleteNoticingNote, getNextReviewId, permanentlyDeleteNoticing, restoreNoticing, withoutExistingAnalysis } from './noticings'
 
 describe('review queue', () => {
   it('moves forward and wraps without returning the current noticing', () => {
     expect(getNextReviewId(['one', 'two', 'three'], 'one')).toBe('two')
     expect(getNextReviewId(['one', 'two', 'three'], 'three')).toBe('one')
     expect(getNextReviewId(['one'], 'one')).toBeUndefined()
+  })
+})
+
+describe('Choko batch queue', () => {
+  it('keeps only photographs without a saved analysis', () => {
+    expect(withoutExistingAnalysis([{ id: 'new', ai_generations: [] }, { id: 'done', ai_generations: [{ id: 'ai-1' }] }])).toEqual(['new'])
   })
 })
 

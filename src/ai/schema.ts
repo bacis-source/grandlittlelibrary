@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 export const chokoAIResultSchema = z.object({
+  suggested_title: z.string().trim().min(1).max(100).optional(),
+  suggested_tags: z.array(z.string().trim().min(1).max(40)).max(6).optional(),
   literal_observation: z.string().trim().min(1).max(1000),
   overlooked_detail: z.string().trim().min(1).max(1000),
   choko_noticing: z.string().trim().min(1).max(240).refine((text) => text.split(/\s+/).length <= 30, 'Choko Noticing must be 30 words or fewer'),
