@@ -24,12 +24,6 @@ export interface NoticingAsset {
 export interface Tag { id: string; name: string; normalized_name: string }
 export interface PublicationRecord { id: string; platform: string; published_at: string | null; caption: string | null }
 export interface NoticingNote { id: string; noticing_id: string; user_id: string; note_type: string; content: string; created_at: string; updated_at: string }
-export type AIGenerationType = 'choko_noticing' | 'caption'
-export type EditorialDecision = 'accepted' | 'edited' | 'rejected'
-export type FeedbackCategory = 'too_poetic' | 'too_generic' | 'too_long' | 'too_short' | 'too_explanatory' | 'too_motivational' | 'invented_detail' | 'missed_main_detail' | 'wrong_tone' | 'too_cute' | 'too_serious' | 'better_wording' | 'other'
-export interface AIGeneration { id: string; generation_group_id: string; noticing_id: string; user_id: string; generation_type: AIGenerationType; model_provider: string; model_name: string; prompt_version: string; input_snapshot: Record<string, unknown>; generated_text: string; structured_output: ChokoAIResult; confidence: number; uncertainties: string[]; created_at: string }
-export interface EditorialRevision { id: string; noticing_id: string; user_id: string; ai_generation_id: string | null; revision_type: AIGenerationType; decision: EditorialDecision; original_ai_text: string | null; final_human_text: string; feedback_reason: string | null; feedback_categories: FeedbackCategory[]; created_at: string }
-export interface ChokoAIResult { literal_observation: string; overlooked_detail: string; choko_noticing: string; caption: string; confidence: number; uncertainties: string[] }
 export interface Noticing {
   id: string
   user_id: string
@@ -58,8 +52,6 @@ export interface Noticing {
   tags?: Tag[]
   publication_records?: PublicationRecord[]
   noticing_notes?: NoticingNote[]
-  ai_generations?: AIGeneration[]
-  editorial_revisions?: EditorialRevision[]
   deleted_at?: string | null
 }
 

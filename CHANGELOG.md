@@ -1,13 +1,5 @@
 # Changelog
 
-## 0.2.0 — Choko Vision
-
-- Added manually triggered, image-aware Choko Noticing and caption suggestions.
-- Added server-only, provider-independent AI integration with validated structured output.
-- Added append-only AI provenance and human editorial revision history with RLS.
-- Added accept/edit feedback flow, reason categories, uncertainty and visible failure states.
-- Added prompt versioning, security and persistence tests, and learning-loop documentation.
-
 ## 0.1.0 — 2026-08-06
 
 - Private email/password login and protected routes.

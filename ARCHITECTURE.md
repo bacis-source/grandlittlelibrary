@@ -26,12 +26,6 @@ The form is single-column on small screens, uses native media selection, local p
 
 AI output should be added as versioned notes or a dedicated provenance table containing model, prompt and version; it must not update the original observation. Server-side media processing can create derived asset rows. Transcription can attach both audio and text. Platforms extend `publication_records` without altering Noticings.
 
-## Choko Vision
-
-AI runs only after a manual action on a Noticing detail page. A Vercel server function authenticates the Supabase bearer token, reads the user-owned Noticing through RLS, downloads the primary private image and calls a provider adapter. No AI secret is shipped in the Vite client. Precise coordinates are excluded from the input snapshot.
-
-`ai_generations` stores immutable provider output and provenance. `editorial_revisions` stores append-only human decisions, wording and reasons. A generation group connects the Choko Noticing and caption produced by one analysis. Structured output is validated before persistence. See `docs/CHOKO_AI.md`.
-
 ## Product context
 
 Nature and the real moment remain the subject. Choko is a genderless, nationality-free Nature Noticer governed by documented rules rather than model drift. Quality outranks reach; originals should not be over-edited. AI may suggest but never erase the photographer's thought, and generated work must remain traceable.
