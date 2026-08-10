@@ -20,8 +20,12 @@ describe('review queue', () => {
 })
 
 describe('Choko batch queue', () => {
-  it('keeps only photographs without a saved analysis', () => {
-    expect(withoutExistingAnalysis([{ id: 'new', ai_generations: [] }, { id: 'done', ai_generations: [{ id: 'ai-1' }] }])).toEqual(['new'])
+  it('keeps only photographs without a saved analysis and skips videos', () => {
+    expect(withoutExistingAnalysis([
+      { id: 'new', ai_generations: [], noticing_assets: [{ id: 'photo-1', asset_type: 'image' }] },
+      { id: 'video', ai_generations: [], noticing_assets: [{ id: 'video-1', asset_type: 'video' }] },
+      { id: 'done', ai_generations: [{ id: 'ai-1' }], noticing_assets: [{ id: 'photo-2', asset_type: 'image' }] },
+    ])).toEqual(['new'])
   })
 })
 

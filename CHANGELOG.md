@@ -20,6 +20,7 @@
 ## Unreleased
 
 - Added resumable Choko batch analysis for unreviewed imported photographs.
+- Video-only Noticings are excluded from the photograph analysis queue.
 - Batch suggestions now include a title and tags, ready to confirm in Review next.
 - Added Review next queue with progress, skip and save-and-continue actions.
 - Review mode preserves the complete original image while editing observations, titles, tags and metadata.

@@ -33,13 +33,13 @@ export async function listReviewQueue() {
 }
 
 export async function listChokoBatchCandidates() {
-  const { data, error } = await supabase.from('noticings').select('id,created_at,ai_generations(id)').is('deleted_at', null).in('status', ['draft', 'unreviewed']).order('created_at', { ascending: true })
+  const { data, error } = await supabase.from('noticings').select('id,created_at,ai_generations(id),noticing_assets(id,asset_type)').is('deleted_at', null).in('status', ['draft', 'unreviewed']).order('created_at', { ascending: true })
   if (error) throw error
   return withoutExistingAnalysis(data ?? [])
 }
 
-export function withoutExistingAnalysis(items: Array<{ id: string; ai_generations?: Array<{ id: string }> | null }>) {
-  return items.filter((item) => !item.ai_generations?.length).map((item) => item.id)
+export function withoutExistingAnalysis(items: Array<{ id: string; ai_generations?: Array<{ id: string }> | null; noticing_assets?: Array<{ id: string; asset_type: string }> | null }>) {
+  return items.filter((item) => !item.ai_generations?.length && item.noticing_assets?.some((asset) => asset.asset_type === 'image')).map((item) => item.id)
 }
 
 export function getNextReviewId(queue: string[], currentId: string) {
