@@ -19,6 +19,8 @@
 
 ## Unreleased
 
+- Review next now combines the complete original, Choko title, noticing, caption and tags in one save-and-continue flow.
+- Video originals now render correctly in the review queue.
 - Added resumable Choko batch analysis for unreviewed imported photographs.
 - Video-only Noticings are excluded from the photograph analysis queue.
 - Batch suggestions now include a title and tags, ready to confirm in Review next.
