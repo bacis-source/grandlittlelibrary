@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { classifyFile, normalizeTag } from './validation'
 import type { Noticing, NoticingInput } from '../types'
+import { CHOKO_PROMPT_VERSION } from '../ai/prompt-versions'
 
 const BUCKET = 'noticing-assets'
 const baseSelect = '*, noticing_assets(*), noticing_tags(tags(id,name,normalized_name)), noticing_notes(*), publication_records(id,platform,published_at,caption)'
@@ -33,13 +34,13 @@ export async function listReviewQueue() {
 }
 
 export async function listChokoBatchCandidates() {
-  const { data, error } = await supabase.from('noticings').select('id,created_at,ai_generations(id),noticing_assets(id,asset_type)').is('deleted_at', null).in('status', ['draft', 'unreviewed']).order('created_at', { ascending: true })
+  const { data, error } = await supabase.from('noticings').select('id,created_at,ai_generations(id,prompt_version),noticing_assets(id,asset_type)').is('deleted_at', null).in('status', ['draft', 'unreviewed']).order('created_at', { ascending: true })
   if (error) throw error
   return withoutExistingAnalysis(data ?? [])
 }
 
-export function withoutExistingAnalysis(items: Array<{ id: string; ai_generations?: Array<{ id: string }> | null; noticing_assets?: Array<{ id: string; asset_type: string }> | null }>) {
-  return items.filter((item) => !item.ai_generations?.length && item.noticing_assets?.some((asset) => asset.asset_type === 'image')).map((item) => item.id)
+export function withoutExistingAnalysis(items: Array<{ id: string; ai_generations?: Array<{ id: string; prompt_version?: string }> | null; noticing_assets?: Array<{ id: string; asset_type: string }> | null }>) {
+  return items.filter((item) => !item.ai_generations?.some((generation) => generation.prompt_version === CHOKO_PROMPT_VERSION) && item.noticing_assets?.some((asset) => asset.asset_type === 'image')).map((item) => item.id)
 }
 
 export function getNextReviewId(queue: string[], currentId: string) {

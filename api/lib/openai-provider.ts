@@ -4,9 +4,10 @@ import type { ChokoAIInput, ChokoAIProvider, ChokoAIProviderResult } from './cho
 const jsonSchema = {
   type: 'object', additionalProperties: false,
   properties: {
+    response_mode: { type: 'string', enum: ['visual_wonder', 'reflection', 'nature_fact'] }, subject_identification: { type: 'string' }, subject_confidence: { type: 'number', minimum: 0, maximum: 1 }, insight_basis: { type: 'string' },
     suggested_title: { type: 'string' }, suggested_tags: { type: 'array', items: { type: 'string' }, maxItems: 6 }, literal_observation: { type: 'string' }, overlooked_detail: { type: 'string' }, choko_noticing: { type: 'string' }, caption: { type: 'string' }, confidence: { type: 'number', minimum: 0, maximum: 1 }, uncertainties: { type: 'array', items: { type: 'string' } },
   },
-  required: ['suggested_title', 'suggested_tags', 'literal_observation', 'overlooked_detail', 'choko_noticing', 'caption', 'confidence', 'uncertainties'],
+  required: ['response_mode', 'subject_identification', 'subject_confidence', 'insight_basis', 'suggested_title', 'suggested_tags', 'literal_observation', 'overlooked_detail', 'choko_noticing', 'caption', 'confidence', 'uncertainties'],
 }
 
 function outputText(payload: Record<string, unknown>) {

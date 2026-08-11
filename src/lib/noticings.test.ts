@@ -20,12 +20,13 @@ describe('review queue', () => {
 })
 
 describe('Choko batch queue', () => {
-  it('keeps only photographs without a saved analysis and skips videos', () => {
+  it('keeps photographs without a current analysis and skips videos', () => {
     expect(withoutExistingAnalysis([
       { id: 'new', ai_generations: [], noticing_assets: [{ id: 'photo-1', asset_type: 'image' }] },
       { id: 'video', ai_generations: [], noticing_assets: [{ id: 'video-1', asset_type: 'video' }] },
-      { id: 'done', ai_generations: [{ id: 'ai-1' }], noticing_assets: [{ id: 'photo-2', asset_type: 'image' }] },
-    ])).toEqual(['new'])
+      { id: 'old', ai_generations: [{ id: 'ai-1', prompt_version: 'choko-vision-v2' }], noticing_assets: [{ id: 'photo-2', asset_type: 'image' }] },
+      { id: 'done', ai_generations: [{ id: 'ai-2', prompt_version: 'choko-vision-v3' }], noticing_assets: [{ id: 'photo-3', asset_type: 'image' }] },
+    ])).toEqual(['new', 'old'])
   })
 })
 
