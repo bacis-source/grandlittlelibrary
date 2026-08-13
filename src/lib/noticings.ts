@@ -67,9 +67,13 @@ async function saveTags(noticingId: string, user: User, names: string[]) {
 
 export interface UploadProgress { index: number; total: number; filename: string }
 
+function databaseValues(input: Omit<NoticingInput, 'tags'>) {
+  return { ...input, captured_at: input.captured_at || null }
+}
+
 export async function createNoticing(input: NoticingInput, files: File[], user: User, onProgress?: (progress: UploadProgress) => void) {
   const { tags, ...values } = input
-  const { data, error } = await supabase.from('noticings').insert({ ...values, user_id: user.id, original_observation_text: input.observation_text }).select().single()
+  const { data, error } = await supabase.from('noticings').insert({ ...databaseValues(values), user_id: user.id, original_observation_text: input.observation_text }).select().single()
   if (error) throw error
   try {
     await saveTags(data.id, user, tags)
@@ -95,7 +99,7 @@ export async function createNoticing(input: NoticingInput, files: File[], user: 
 
 export async function updateNoticing(id: string, input: NoticingInput, user: User) {
   const { tags, ...values } = input
-  const { error } = await supabase.from('noticings').update(values).eq('id', id)
+  const { error } = await supabase.from('noticings').update(databaseValues(values)).eq('id', id)
   if (error) throw error
   await saveTags(id, user, tags)
 }

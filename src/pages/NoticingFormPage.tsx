@@ -111,7 +111,10 @@ export function NoticingFormPage() {
         const next = getNextReviewId(reviewQueue, id)
         navigate(next ? `/noticings/${next}/edit?review=1` : '/library?status=reviewed')
       } else navigate(`/noticings/${nextId}`)
-    } catch (error) { setSubmitError(error instanceof Error ? error.message : 'Could not save this noticing.') }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : typeof error === 'object' && error && 'message' in error ? String(error.message) : 'Could not save this noticing.'
+      setSubmitError(message)
+    }
     finally { setSaving(false); setUploadLabel('') }
   }
 
