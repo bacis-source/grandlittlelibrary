@@ -7,5 +7,5 @@ describe('Choko structured output', () => {
   it('accepts a grounded structured response', () => expect(chokoAIResultSchema.parse(valid)).toEqual(valid))
   it('rejects a noticing longer than 30 words', () => expect(() => chokoAIResultSchema.parse({ ...valid, choko_noticing: Array(31).fill('word').join(' ') })).toThrow())
   it('rejects malformed or unbounded confidence', () => expect(() => chokoAIResultSchema.parse({ ...valid, confidence: 2 })).toThrow())
-  it('records a stable prompt version', () => expect(CHOKO_PROMPT_VERSION).toBe('choko-vision-v3'))
+  it('records a stable prompt version', () => expect(CHOKO_PROMPT_VERSION).toBe('choko-vision-v4'))
 })

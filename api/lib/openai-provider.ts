@@ -31,7 +31,7 @@ export class OpenAIChokoProvider implements ChokoAIProvider {
           method: 'POST', headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: this.model, store: false, safety_identifier: input.safetyIdentifier,
-            reasoning: { effort: 'low' },
+            reasoning: { effort: 'medium' },
             instructions: input.systemPrompt,
             input: [{ role: 'user', content: [{ type: 'input_text', text: input.prompt }, { type: 'input_image', image_url: input.imageDataUrl, detail: 'high' }] }],
             text: { format: { type: 'json_schema', name: 'choko_vision_result', strict: true, schema: jsonSchema } },
