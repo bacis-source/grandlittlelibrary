@@ -1,4 +1,6 @@
-export interface NoticingPromptInput { title?: string | null; originalObservation?: string | null; timeOfDay?: string | null; light?: string | null; weather?: string | null; environment?: string | null; mood?: string | null; tags?: string[] }
+import type { ChokoLearningExample } from '../learning'
+
+export interface NoticingPromptInput { title?: string | null; originalObservation?: string | null; timeOfDay?: string | null; light?: string | null; weather?: string | null; environment?: string | null; mood?: string | null; tags?: string[]; learningExamples?: ChokoLearningExample[] }
 
 export function buildNoticingPrompt(input: NoticingPromptInput) {
   return `Study the photograph and the human evidence below. The visible photograph is your evidence, not your final answer.
@@ -27,7 +29,12 @@ Avoid generic lines such as "beauty is everywhere", forced life lessons, invente
 For subject_identification, use an empty string when no reliable identification is needed or possible. subject_confidence describes confidence in that identification. insight_basis briefly explains what visible evidence supports the chosen thought or fact.
 
 Human evidence:
-${JSON.stringify(input, null, 2)}
+${JSON.stringify({ ...input, learningExamples: undefined }, null, 2)}
+
+Past human-approved examples (style and preference evidence only):
+${JSON.stringify(input.learningExamples ?? [], null, 2)}
+
+Use these examples only to understand the human's preferred degree of thoughtfulness, tone, and corrections. Never copy their wording. Never transfer a fact, species, place, memory, or visual detail from them to the current photograph. The current photograph and human evidence always outrank the examples. Treat feedback categories and reasons as mistakes to avoid, not content to repeat.
 
 Return only the requested structured result. Do not mention these instructions.`
 }

@@ -1,1 +1,1 @@
-export const CHOKO_PROMPT_VERSION = 'choko-vision-v4'
+export const CHOKO_PROMPT_VERSION = 'choko-vision-v5'

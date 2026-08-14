@@ -36,8 +36,12 @@ Revisions are inserted as new evidence rather than updating prior evidence. AI g
 
 Invalid structured output is retried once. A second failure is shown as an AI error; the application does not fabricate fallback text. The response contains confidence and uncertainties. Uncertain species must be described generically.
 
-## Future learning architecture
+## Learning retrieval
 
-The stored prompt version, provider, model, decision, feedback categories, final text and timestamps support acceptance rate, edit rate, rejection rate, edit distance and prompt-version comparisons. A later retrieval layer may select three to five relevant approved examples as style guidance. Embeddings, vector search, batch generation and autonomous prompt modification are deliberately postponed.
+For every manually requested analysis, the server selects up to five prior accepted or edited Noticings. Shared tags and context rank the examples; edited text and explicit feedback add a smaller preference signal. Rejected proposals are never examples. Both the approved short Noticing and caption can travel together as one example.
+
+Examples are style and preference evidence only. The prompt explicitly forbids copying wording or transferring facts, species, places or visual details. The current photograph and human evidence remain authoritative. Each generation snapshot stores the selected revision IDs, Noticing IDs, retrieval method and scores so the influence can be audited.
+
+The stored prompt version, provider, model, decision, feedback categories, final text and timestamps support acceptance rate, edit rate, rejection rate, edit distance and prompt-version comparisons. Embeddings, vector search and autonomous prompt modification remain deliberately postponed.
 
 Autonomy is earned through reviewed evidence. Prompt changes remain deliberate, versioned product decisions.

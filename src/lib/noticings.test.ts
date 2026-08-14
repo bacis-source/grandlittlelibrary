@@ -25,7 +25,7 @@ describe('Choko batch queue', () => {
       { id: 'new', ai_generations: [], noticing_assets: [{ id: 'photo-1', asset_type: 'image' }] },
       { id: 'video', ai_generations: [], noticing_assets: [{ id: 'video-1', asset_type: 'video' }] },
       { id: 'old', ai_generations: [{ id: 'ai-1', prompt_version: 'choko-vision-v2' }], noticing_assets: [{ id: 'photo-2', asset_type: 'image' }] },
-      { id: 'done', ai_generations: [{ id: 'ai-2', prompt_version: 'choko-vision-v4' }], noticing_assets: [{ id: 'photo-3', asset_type: 'image' }] },
+      { id: 'done', ai_generations: [{ id: 'ai-2', prompt_version: 'choko-vision-v5' }], noticing_assets: [{ id: 'photo-3', asset_type: 'image' }] },
     ])).toEqual(['new', 'old'])
   })
 })

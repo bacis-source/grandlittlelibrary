@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { CHOKO_PROMPT_VERSION } from '../src/ai/prompt-versions.js'
 import { CHOKO_SYSTEM_PROMPT } from '../src/ai/prompts/choko-system.js'
 import { buildNoticingPrompt } from '../src/ai/prompts/noticing-analysis.js'
+import { selectLearningExamples, type LearningCandidate } from '../src/ai/learning.js'
 import { OpenAIChokoProvider } from './lib/openai-provider.js'
 
 interface RequestLike { method?: string; headers: Record<string, string | string[] | undefined>; body?: unknown }
@@ -35,9 +36,19 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     const imageDataUrl = `data:${blob.type || 'image/jpeg'};base64,${Buffer.from(await blob.arrayBuffer()).toString('base64')}`
     const tagLinks = noticing.noticing_tags as unknown as Array<{ tags: { name: string } | Array<{ name: string }> | null }>
     const tags = (tagLinks ?? []).map((entry) => Array.isArray(entry.tags) ? entry.tags[0]?.name : entry.tags?.name).filter((name): name is string => Boolean(name))
-    const inputSnapshot = { title: noticing.title, original_observation: noticing.original_observation_text, time_of_day: noticing.time_of_day, light: noticing.light_condition, weather: noticing.weather, environment: noticing.environment_type, mood: noticing.mood, tags }
+    const evidence = { tags, environment: noticing.environment_type, mood: noticing.mood, time_of_day: noticing.time_of_day, light: noticing.light_condition, weather: noticing.weather }
+    const { data: revisions, error: revisionsError } = await supabase.from('editorial_revisions').select('id,noticing_id,ai_generation_id,revision_type,decision,final_human_text,feedback_reason,feedback_categories,created_at').neq('noticing_id', noticing.id).in('decision', ['accepted', 'edited']).order('created_at', { ascending: false }).limit(100)
+    if (revisionsError) throw revisionsError
+    const generationIds = [...new Set((revisions ?? []).map((item) => item.ai_generation_id).filter((id): id is string => Boolean(id)))]
+    const { data: generations, error: generationsError } = generationIds.length ? await supabase.from('ai_generations').select('id,input_snapshot').in('id', generationIds) : { data: [], error: null }
+    if (generationsError) throw generationsError
+    const snapshots = new Map((generations ?? []).map((item) => [item.id, (item.input_snapshot ?? {}) as Record<string, unknown>]))
+    const candidates: LearningCandidate[] = (revisions ?? []).map((item) => ({ id: item.id, noticing_id: item.noticing_id, revision_type: item.revision_type, decision: item.decision, final_human_text: item.final_human_text, feedback_reason: item.feedback_reason, feedback_categories: item.feedback_categories, created_at: item.created_at, input_snapshot: snapshots.get(item.ai_generation_id) ?? {} }))
+    const learningExamples = selectLearningExamples(evidence, candidates)
+    const learningTrace = { method: 'metadata-overlap-v1', example_revision_ids: learningExamples.flatMap((item) => item.revisionIds), example_noticing_ids: learningExamples.map((item) => item.noticingId), scores: learningExamples.map((item) => item.score) }
+    const inputSnapshot = { title: noticing.title, original_observation: noticing.original_observation_text, ...evidence, learning: learningTrace }
     const provider = new OpenAIChokoProvider(process.env.OPENAI_API_KEY)
-    const generated = await provider.analyzeNoticing({ systemPrompt: CHOKO_SYSTEM_PROMPT, prompt: buildNoticingPrompt({ title: noticing.title, originalObservation: noticing.original_observation_text, timeOfDay: noticing.time_of_day, light: noticing.light_condition, weather: noticing.weather, environment: noticing.environment_type, mood: noticing.mood, tags }), imageDataUrl, safetyIdentifier: createHash('sha256').update(authData.user.id).digest('hex') })
+    const generated = await provider.analyzeNoticing({ systemPrompt: CHOKO_SYSTEM_PROMPT, prompt: buildNoticingPrompt({ title: noticing.title, originalObservation: noticing.original_observation_text, timeOfDay: noticing.time_of_day, light: noticing.light_condition, weather: noticing.weather, environment: noticing.environment_type, mood: noticing.mood, tags, learningExamples }), imageDataUrl, safetyIdentifier: createHash('sha256').update(authData.user.id).digest('hex') })
     const groupId = randomUUID()
     const shared = { generation_group_id: groupId, noticing_id: noticing.id, user_id: authData.user.id, model_provider: generated.provider, model_name: generated.model, prompt_version: CHOKO_PROMPT_VERSION, input_snapshot: inputSnapshot, structured_output: generated.result, confidence: generated.result.confidence, uncertainties: generated.result.uncertainties }
     const { data: rows, error: insertError } = await supabase.from('ai_generations').insert([{ ...shared, generation_type: 'choko_noticing', generated_text: generated.result.choko_noticing }, { ...shared, generation_type: 'caption', generated_text: generated.result.caption }]).select()
