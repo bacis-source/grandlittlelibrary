@@ -4,7 +4,7 @@ import { analyzeNoticing, latestGeneration, latestRevision, saveEditorialRevisio
 import type { AIGeneration, AIGenerationType, EditorialRevision, FeedbackCategory } from '../types'
 
 const feedbackOptions: Array<{ value: FeedbackCategory; label: string }> = [
-  { value: 'too_poetic', label: 'Too poetic' }, { value: 'too_generic', label: 'Too generic' }, { value: 'too_long', label: 'Too long' }, { value: 'too_short', label: 'Too short' }, { value: 'too_explanatory', label: 'Too explanatory' }, { value: 'too_motivational', label: 'Too motivational' }, { value: 'invented_detail', label: 'Invented detail' }, { value: 'missed_main_detail', label: 'Missed the detail' }, { value: 'wrong_tone', label: 'Wrong tone' }, { value: 'too_cute', label: 'Too cute' }, { value: 'too_serious', label: 'Too serious' }, { value: 'better_wording', label: 'Better wording' }, { value: 'other', label: 'Other' },
+  { value: 'too_descriptive', label: 'Too descriptive' }, { value: 'too_poetic', label: 'Too poetic' }, { value: 'too_generic', label: 'Too generic' }, { value: 'too_long', label: 'Too long' }, { value: 'too_short', label: 'Too short' }, { value: 'too_explanatory', label: 'Too explanatory' }, { value: 'too_motivational', label: 'Too motivational' }, { value: 'invented_detail', label: 'Invented detail' }, { value: 'wrong_fact', label: 'Wrong fact' }, { value: 'missed_main_detail', label: 'Missed the detail' }, { value: 'wrong_tone', label: 'Wrong tone' }, { value: 'too_cute', label: 'Too cute' }, { value: 'too_serious', label: 'Too serious' }, { value: 'better_wording', label: 'Better wording' }, { value: 'other', label: 'Other' },
 ]
 
 interface Props { noticingId: string; userId: string; initialGenerations?: AIGeneration[]; initialRevisions?: EditorialRevision[] }
